@@ -29,7 +29,48 @@ export default function LoginPage() {
       // 使用 AuthContext 的 login 方法
       login(response.token, response.user)
 
-      // 跳转到首页
+      // 检查是否有待收藏的小说
+      const pendingCollect = sessionStorage.getItem('pendingCollect')
+      if (pendingCollect) {
+        try {
+          const pendingNovel = JSON.parse(pendingCollect)
+
+          // 首先检查或创建小说
+          let novelId: number
+          try {
+            const existingNovels = await api.get<{ content: any[]; totalElements: number }>(
+              `/novels?source_url=${encodeURIComponent(pendingNovel.source_url)}`
+            )
+
+            if (existingNovels.content && existingNovels.content.length > 0) {
+              novelId = existingNovels.content[0].id
+            } else {
+              const newNovel = await api.post<{ id: number }>('/novels', pendingNovel)
+              novelId = newNovel.id
+            }
+          } catch (error) {
+            // 如果查找失败，直接创建小说
+            const newNovel = await api.post<{ id: number }>('/novels', pendingNovel)
+            novelId = newNovel.id
+          }
+
+          // 添加到收藏
+          await api.post('/collections', { novel_id: novelId })
+
+          // 清除待收藏信息
+          sessionStorage.removeItem('pendingCollect')
+
+          // 显示成功消息并跳转到收藏页
+          alert(`已成功收藏《${pendingNovel.title}》`)
+          router.push("/collections")
+          return
+        } catch (error) {
+          console.error('自动收藏失败:', error)
+          sessionStorage.removeItem('pendingCollect')
+        }
+      }
+
+      // 正常跳转到首页
       router.push("/")
     } catch (err: any) {
       setError(err.message || "登录失败")

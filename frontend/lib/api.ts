@@ -160,11 +160,11 @@ export interface NovelInfo {
   rank: number;
   title: string;
   author: string;
-  cover_url?: string;
-  source_url: string;
+  coverUrl?: string;
+  sourceUrl: string;
   description?: string;
   status?: string;
-  total_chapters?: number;
+  totalChapters?: number;
 }
 
 export interface RankingData {

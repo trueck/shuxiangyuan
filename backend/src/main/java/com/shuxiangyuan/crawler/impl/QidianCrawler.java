@@ -141,6 +141,7 @@ public class QidianCrawler extends AbstractCrawler {
 
     /**
      * 模拟数据（用于开发演示）
+     * 每个榜单返回10本小说
      */
     @Override
     protected List<NovelInfo> getMockData() {
@@ -194,6 +195,56 @@ public class QidianCrawler extends AbstractCrawler {
                 .coverUrl("")
                 .status("连载")
                 .totalChapters(600)
+                .build(),
+            NovelInfo.builder()
+                .rank(6)
+                .title("星门")
+                .author("老鹰吃小鸡")
+                .description("传说，在那里可以获得一切。")
+                .sourceUrl("https://www.qidian.com/info/1034983746")
+                .coverUrl("")
+                .status("连载")
+                .totalChapters(1200)
+                .build(),
+            NovelInfo.builder()
+                .rank(7)
+                .title("赤心巡天")
+                .author("情何以甚")
+                .description("山河千里写伏尸，乾坤百年描饿虎。")
+                .sourceUrl("https://www.qidian.com/info/1035809082")
+                .coverUrl("")
+                .status("连载")
+                .totalChapters(900)
+                .build(),
+            NovelInfo.builder()
+                .rank(8)
+                .title("长夜余火")
+                .author("肘子")
+                .description("余火藏于长夜，当有燃灯之人。")
+                .sourceUrl("https://www.qidian.com/info/1035698006")
+                .coverUrl("")
+                .status("完结")
+                .totalChapters(700)
+                .build(),
+            NovelInfo.builder()
+                .rank(9)
+                .title("灵境行者")
+                .author(" 卖报小郎君")
+                .description("灵境穿行，虚实交错，梦境与现实。")
+                .sourceUrl("https://www.qidian.com/info/1038489683")
+                .coverUrl("")
+                .status("连载")
+                .totalChapters(500)
+                .build(),
+            NovelInfo.builder()
+                .rank(10)
+                .title("明克街13号")
+                .author(" 纯洁滴小龙")
+                .description("这是一个关于超凡、诡秘和探案的故事。")
+                .sourceUrl("https://www.qidian.com/info/1021769540")
+                .coverUrl("")
+                .status("连载")
+                .totalChapters(400)
                 .build()
         );
     }

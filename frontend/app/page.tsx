@@ -3,10 +3,11 @@
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BookOpen, Star, TrendingUp, Clock } from "lucide-react"
+import { BookOpen, Star, TrendingUp, Clock, Plus } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { api, rankingApi, type Collection, type RankingData } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { api, rankingApi, collectionApi, type Collection, type RankingData, type NovelInfo } from "@/lib/api"
 
 // 网站显示名称和颜色配置
 const SITE_CONFIG: Record<string, { name: string; color: string }> = {
@@ -19,11 +20,13 @@ const SITE_CONFIG: Record<string, { name: string; color: string }> = {
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
   const [recentCollections, setRecentCollections] = useState<Collection[]>([])
   const [rankings, setRankings] = useState<RankingData[]>([])
   const [loadingRankings, setLoadingRankings] = useState(true)
   const [loading, setLoading] = useState(false)
   const [jsLoaded, setJsLoaded] = useState(false)
+  const [collectingNovels, setCollectingNovels] = useState<Set<string>>(new Set())
 
   // Check if JS is loaded
   useEffect(() => {
@@ -33,9 +36,6 @@ export default function Home() {
 
   useEffect(() => {
     console.log("=== useEffect triggered, isAuthenticated:", isAuthenticated)
-    // 直接设置一个测试值来验证useEffect被调用了
-    setLoadingRankings(false)
-
     if (isAuthenticated) {
       loadRecentCollections()
     }
@@ -101,14 +101,101 @@ export default function Home() {
     }
   }
 
+  // 从排行榜添加收藏
+  const handleCollectFromRanking = async (novel: NovelInfo) => {
+    const novelKey = `${novel.title}-${novel.author}`
+
+    if (!isAuthenticated) {
+      // 保存待收藏信息到sessionStorage
+      sessionStorage.setItem('pendingCollect', JSON.stringify({
+        title: novel.title,
+        author: novel.author,
+        description: novel.description,
+        source_url: novel.sourceUrl,
+        source_site: novel.sourceUrl?.includes('qidian') ? 'qidian' :
+                  novel.sourceUrl?.includes('zongheng') ? 'zongheng' :
+                  novel.sourceUrl?.includes('jjwxc') ? 'jjwxc' :
+                  novel.sourceUrl?.includes('17k') ? '17k' : 'fanqie',
+        total_chapters: novel.totalChapters || 0,
+        status: novel.status || '未知'
+      }))
+      // 跳转到登录页
+      router.push('/login')
+      return
+    }
+
+    setCollectingNovels(prev => new Set([...prev, novelKey]))
+
+    try {
+      // 首先检查小说是否已存在于数据库中
+      let novelId: number
+      try {
+        // 尝试通过source_url查找现有小说
+        const existingNovels = await api.get<{ content: any[]; totalElements: number }>(
+          `/novels?source_url=${encodeURIComponent(novel.sourceUrl)}`
+        )
+
+        if (existingNovels.content && existingNovels.content.length > 0) {
+          novelId = existingNovels.content[0].id
+        } else {
+          // 小说不存在，创建新小说
+          const newNovel = await api.post<{
+            id: number
+          }>('/novels', {
+            title: novel.title,
+            author: novel.author,
+            description: novel.description,
+            source_url: novel.sourceUrl,
+            source_site: novel.sourceUrl?.includes('qidian') ? 'qidian' :
+                      novel.sourceUrl?.includes('zongheng') ? 'zongheng' :
+                      novel.sourceUrl?.includes('jjwxc') ? 'jjwxc' :
+                      novel.sourceUrl?.includes('17k') ? '17k' : 'fanqie',
+            total_chapters: novel.totalChapters || 0,
+            status: novel.status || '未知'
+          })
+          novelId = newNovel.id
+        }
+      } catch (error) {
+        console.error('Error checking/creating novel:', error)
+        // 创建小说
+        const newNovel = await api.post<{
+          id: number
+        }>('/novels', {
+          title: novel.title,
+          author: novel.author,
+          description: novel.description,
+          source_url: novel.sourceUrl,
+          source_site: 'unknown',
+          total_chapters: novel.totalChapters || 0,
+          status: novel.status || '未知'
+        })
+        novelId = newNovel.id
+      }
+
+      // 添加到收藏
+      await collectionApi.create({
+        novel_id: novelId
+      })
+
+      alert(`已收藏《${novel.title}》`)
+    } catch (error: any) {
+      console.error('收藏失败:', error)
+      if (error.message?.includes('已存在')) {
+        alert(`《${novel.title}》已在收藏夹中`)
+      } else {
+        alert('收藏失败，请稍后重试')
+      }
+    } finally {
+      setCollectingNovels(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(novelKey)
+        return newSet
+      })
+    }
+  }
+
   return (
     <main className="min-h-screen">
-      {/* Debug: JS execution indicator */}
-      {jsLoaded && (
-        <div className="fixed top-20 right-4 bg-green-500 text-white px-2 py-1 text-xs rounded">
-          JS已加载
-        </div>
-      )}
 
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-primary/10 to-background py-16 md:py-24">
@@ -287,22 +374,42 @@ export default function Home() {
                       <CardContent>
                         {ranking.novels.length > 0 ? (
                           <ul className="space-y-3">
-                            {ranking.novels.slice(0, 5).map((novel) => (
-                              <li key={novel.rank} className="flex items-start gap-3">
-                                <span className={`flex-shrink-0 w-6 h-6 rounded-full ${
-                                  novel.rank <= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                                } flex items-center justify-center text-xs font-bold`}>
-                                  {novel.rank}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">{novel.title}</p>
-                                  <p className="text-xs text-muted-foreground">{novel.author}</p>
-                                </div>
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
-                                  {novel.status}
-                                </span>
-                              </li>
-                            ))}
+                            {ranking.novels.map((novel) => {
+                              const novelKey = `${novel.title}-${novel.author}`
+                              const isCollecting = collectingNovels.has(novelKey)
+                              return (
+                                <li key={novel.rank} className="flex items-center gap-3 group">
+                                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    novel.rank <= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                  }`}>
+                                    {novel.rank}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">{novel.title}</p>
+                                    <p className="text-xs text-muted-foreground">{novel.author}</p>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                                    {novel.status}
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="flex-shrink-0 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                                    onClick={() => handleCollectFromRanking(novel)}
+                                    disabled={isCollecting}
+                                  >
+                                    {isCollecting ? (
+                                      <span className="text-xs">收藏中...</span>
+                                    ) : (
+                                      <>
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        <span className="text-xs">收藏</span>
+                                      </>
+                                    )}
+                                  </Button>
+                                </li>
+                              )
+                            })}
                           </ul>
                         ) : (
                           <p className="text-sm text-muted-foreground">暂无数据</p>
