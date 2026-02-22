@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(rustc:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(echo:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker compose:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(curl:*)",
+      "Bash(pushd:*)",
+      "Bash(open http://localhost:3001)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzcxNzUxMjU0LCJleHAiOjE3NzE4Mzc2NTR9.rMBe2dZPXnroE6OytkrnQdMOOfJNdAG3yWiCB8BwDvqGZKp6VLdHrEjZWtt9y3iV\")",
+      "Bash(__NEW_LINE_d240694ed2364eb7__ curl -s -X POST \"http://localhost:8080/api/rankings/fetch/qidian/monthly\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" -w \"\\\\nHTTP Status: %{http_code}\\\\n\")",
+      "Bash(__NEW_LINE_41fb06575caeb7de__ curl -s -X POST \"http://localhost:8080/api/rankings/fetch/qidian/monthly\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzcxNzUxMzc0LCJleHAiOjE3NzE4Mzc3NzR9.4WnsCmKnQwxOLW7MQh6_oUh2G4L1aT4887cTSCjH99Yu1z4qmKi5eko2bi_pggCv\")",
+      "Bash(__NEW_LINE_7455bc2fb66447a6__ curl -s -X POST \"http://localhost:8080/api/rankings/fetch/qidian/monthly\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(timeout:*)",
+      "Bash(open http://localhost:3000)"
+    ]
+  }
+}
